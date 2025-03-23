@@ -1,0 +1,38 @@
+https://data.worldbank.org/indicator/ER.GDP.FWTL.M3.KD
+: Water productivity, total (constant 2015 US$ GDP per cubic meter of total freshwater withdrawal)
+
+https://data.worldbank.org/indicator/ER.H2O.FWST.ZS
+: Level of water stress: freshwater withdrawal as a proportion of available freshwater resources
+
+https://data.worldbank.org/indicator/ER.H2O.FWTL.K3
+: Annual freshwater withdrawals, total (billion cubic meters)
+
+https://data.worldbank.org/indicator/ER.H2O.FWAG.ZS
+: Annual freshwater withdrawals, agriculture (% of total freshwater withdrawal)
+
+https://data.worldbank.org/indicator/SP.POP.TOTL
+: Population, total
+
+https://data.worldbank.org/indicator/ER.H2O.FWDM.ZS
+: Annual freshwater withdrawals, domestic (% of total freshwater withdrawal)
+
+https://data.worldbank.org/indicator/ER.H2O.FWIN.ZS
+: Annual freshwater withdrawals, industry (% of total freshwater withdrawal)
+
+https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.CD
+: GDP per capita, PPP (current international $)
+
+https://data.worldbank.org/indicator/IE.PPI.WATR.CD
+: Investment in water and sanitation with private participation (current US$)
+
+https://data.worldbank.org/indicator/EN.CLC.MDAT.ZS
+: Droughts, floods, extreme temperatures (% of population, average 1990-2009)
+
+https://climate.nasa.gov/vital-signs/sea-level/?intent=121
+: global sea level
+
+https://climate.nasa.gov/vital-signs/global-temperature/?intent=121
+: global temperature
+
+https://www.sciencebase.gov/catalog/item/631405bcd34e36012efa306f
+:groundwater depletion data of the USA
