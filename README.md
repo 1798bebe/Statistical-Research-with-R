@@ -5,7 +5,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 ## Current Progress
 
 - Data has been collected and preprocessing has been completed.
-- Missing data has been filtered and regression imputation has been applied to fill in missind data in GDP per capita dataset. 
+- Missing data has been filtered. Also, regression imputation has been applied to fill in the missind values of GDP per capita dataset. 
 
 ## Next Steps 
 
