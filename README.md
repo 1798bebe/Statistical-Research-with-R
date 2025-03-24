@@ -1,4 +1,4 @@
-# Machine Learning-Based Statistical Analysis of Global Water Resource Utilization, Economic Factors, and Climate Trends Using R
+## Statistical Research: Water Resource Analysis with R
 
 This research utilizes statistical and machine learning techniques to analyze global water resource utilization, economic indicators, and climate trends.
 
