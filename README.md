@@ -1,6 +1,6 @@
-# Water Resources and Economic Indicators Research
+# Machine Learning-Based Statistical Analysis of Global Water Resource Utilization, Economic Factors, and Climate Trends Using R
 
-This research examines global water resources in relation to economic and climatic indicators.
+This research utilizes statistical and machine learning techniques to analyze global water resource utilization, economic indicators, and climate trends.
 
 ## Current Progress
 
