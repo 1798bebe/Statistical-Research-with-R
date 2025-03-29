@@ -231,9 +231,40 @@ gdppc_from1993_merged <- ungroup(gdppc_from1993_merged)
 # tend to have similar economic structures, development levels, and spending patterns, making their GDP per capita values more comparable.
 # Regression analysis of annual freshwater withdrawals by population will be done later. 
 
+# Derived Feature Construction
+# Reconstruct GDP in constant USD: GDP = water_productivity × withdrawals
+gdp_usd <- data.frame(
+  Country.Name   = filtered_normal$wp$Country.Name,
+  Country.Code   = filtered_normal$wp$Country.Code,
+  Indicator.Name = NA_character_,
+  Indicator.Code = NA_character_,
+  filtered_normal$wp[ , 5:ncol(filtered_normal$wp)] * filtered_normal$fw[ , 5:ncol(filtered_normal$fw)]
+)
+
+# Reconstruct available water resources: withdrawals / water_stress × 100
+available_resources <- data.frame(
+  Country.Name   = filtered_normal$fw$Country.Name,
+  Country.Code   = filtered_normal$fw$Country.Code,
+  Indicator.Name = NA_character_,
+  Indicator.Code = NA_character_,
+  (filtered_normal$fw[ , 5:ncol(filtered_normal$fw)] / filtered_normal$ws[ , 5:ncol(filtered_normal$ws)]) * 100
+)
+
+# Reconstruct GDP in PPP: gdppc × population
+gdp_ppp <- data.frame(
+  Country.Name   = filtered_normal$gdp$Country.Name,
+  Country.Code   = filtered_normal$gdp$Country.Code,
+  Indicator.Name = NA_character_,
+  Indicator.Code = NA_character_,
+  filtered_normal$gdp[ , 5:ncol(filtered_normal$gdp)] * filtered_normal$pop[ , 5:ncol(filtered_normal$pop)]
+)
+
 # Saving files 
 # Custom filenames
 save_targets <- list(
+  gdp_usd = gdp_usd,
+  gdp_ppp = gdp_ppp,
+  available_resources = available_resources, 
   info = additional_info,
   gdppc_from1993 = gdppc_from1993_merged
 )
