@@ -7,7 +7,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Data collection and preprocessing completed, including filtering missing data and regression-based imputation for GDP per capita.
 - Feature engineering completed (GDP in USD, available resources, GDP in PPP).
 - PCA conducted for dimensionality assessment.
-- K-means clustering applied on selected features and evaluated using Silhouette, Davies-Bouldin, and Calinski-Harabasz indices and cluster profiles summarized and saved as a labeled dataset.
+- K-means clustering applied on selected features and evaluated using Silhouette, Davies-Bouldin, and Calinski-Harabasz indices.
 
 ## Next Steps 
 
