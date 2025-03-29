@@ -17,6 +17,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 ![image](https://github.com/user-attachments/assets/3822a212-ca56-483e-ba63-51a94459c0cf)
 
 ![image](https://github.com/user-attachments/assets/6e93470b-d6d0-4fcf-80d8-b2ea93697572)
+
 (The Silhouette score was 0.517 and the Davies-Bouldin Index was 0.732, both indicating a __reasonably good__ clustering result.)
 ## Next Steps 
 
