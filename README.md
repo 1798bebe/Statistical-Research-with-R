@@ -15,9 +15,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Trend and Cyclical Pattern Analysis
 - Supervised Learning (Regression, Classification)
 - Time Series Forecasting
-- Visualization and Interpretation
-- Policy Recommendations
-- Final Report Completion
+- Final Report Completion (Including Visualization and Interpretation and Policy Recommendations)
 
 ## Deadline
 
