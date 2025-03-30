@@ -61,10 +61,12 @@ pca_data <- pca_dataset[ , 3:ncol(pca_dataset)]
 run_pca <- function(data, title = "PCA Contribution Plot") {
   result <- prcomp(data, scale. = TRUE)
   print(fviz_pca_var(result, col.var = "contrib") + labs(title = title))
+  print(summary(result))
   return(result)
 }
 
 pca_result <- run_pca(pca_data, "PCA: All 7 Normal Variables")
+pca_result 
 
 # ================================
 # 2. Clustering Preparation
@@ -136,7 +138,8 @@ cluster_profiles <- clustering_dataset %>%
 # Bar plot
 ggplot(cluster_profiles, aes(x = Feature, y = Mean, fill = Cluster)) +
   geom_col(position = "dodge") +
-  labs(title = "Cluster Profiles", y = "Average Value") +
+  scale_y_log10() +
+  labs(title = "Cluster Profiles(log-transformed)", y = "Average Value") +
   theme_minimal()
 
 # Geographic Cluster Map
