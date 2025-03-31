@@ -4,8 +4,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 
 ## Current Progress
 
-- Data collection and preprocessing completed, including filtering missing data and regression-based imputation for GDP per capita.
-- Feature engineering completed (GDP in USD, available resources, GDP in PPP).
+- Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for GDP per capita.
 - PCA conducted for dimensionality reduction, followed by K-means clustering on selected features, evaluated using Silhouette and Davies-Bouldin indices.
 - Time series forecasting completed using ARIMA and Prophet on Germany’s freshwater withdrawals, with scenario-based policy recommendations derived from potential trend drivers.
 
