@@ -8,7 +8,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Feature engineering completed (GDP in USD, available resources, GDP in PPP).
 - PCA conducted for dimensionality assessment.
 - K-means clustering applied on selected features and evaluated using Silhouette and Davies-Bouldin indices.
-- Time series forecasting completed using ARIMA and Prophet models on Germany's freshwater withdrawals, with performance comparison and policy interpretation.
+- Time series forecasting completed using ARIMA and Prophet models on Germany's freshwater withdrawals, with scenario-based policy recommendations developed according to potential drivers of   the trend.
 
 ## Next Steps 
 
