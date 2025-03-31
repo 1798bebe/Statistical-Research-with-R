@@ -10,7 +10,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 
 ## Next Steps 
 
-- Exploratory Data Analysis (EDA) & Trend and Cyclical Pattern Analysis
+- Exploratory and Inferential Data Analysis
 - Supervised Learning (Regression, Classification)
 - Final Report Completion (Including Visualization and Interpretation and Policy Recommendations)
 
