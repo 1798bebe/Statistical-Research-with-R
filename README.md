@@ -7,7 +7,9 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for GDP per capita.
 - PCA conducted for dimensionality reduction, followed by K-means clustering on selected features, evaluated using Silhouette and Davies-Bouldin indices.
 - Time series forecasting completed using ARIMA and Prophet on Germany’s freshwater withdrawals, with scenario-based policy recommendations derived from potential trend drivers.
-  [Time Series Forecasting Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/time%20series%20forecasting/report_time_series_forecasting.pdf)
+- [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/time%20series%20forecasting/report_time_series_forecasting.pdf)
+- [🧠 R Code](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/time%20series%20forecasting/time_series_forecasting.R)
+  
 
 ## Next Steps 
 
