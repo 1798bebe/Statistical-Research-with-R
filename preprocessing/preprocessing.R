@@ -16,6 +16,7 @@ water_stress <- read.csv("water_stress.csv", header = TRUE, skip = 4)
 water_productivity <- read.csv("water_productivity.csv", header = TRUE, skip = 4)
 natural_disasters <- read.csv("droughts_floods_extreme_temperatures.csv", header = TRUE, skip = 4)
 gdp_per_capita <- read.csv("gdp_per_capita.csv", header = TRUE, skip = 4)
+precipitation <- read.csv("precipitation.csv", header = TRUE, skip = 4)
 additional_info <- read.csv("mc_gdp_per_capita.csv", header = TRUE) 
 # IncomeGroup or Region from additional_info can be merged into other data frame based on matching Country.Code
 
@@ -38,7 +39,8 @@ calculate_country_missing <- function(data, meta_cols = 4) {
 alldata <- list(
   wp = water_productivity, ws = water_stress, fw = annual_freshwater_withdrawals,
   fwa = afwd_agriculture, fwd = afwd_domestic, fwi = afwd_industry,
-  gdp = gdp_per_capita, pop = population, pri = private_investment, natd = natural_disasters
+  gdp = gdp_per_capita, pop = population, pri = private_investment, 
+  natd = natural_disasters, prec = precipitation
 )
 
 missing_raw <- data.frame(
@@ -61,7 +63,7 @@ ggplot(missing_raw, aes(x = Missing_Proportion, y = reorder(Dataset, Missing_Pro
 missing_prop_year <- lapply(alldata, calculate_year_missing)
 missing_prop_country <- lapply(alldata, calculate_country_missing)
 
-keys <- c("wp", "ws", "fw", "fwa", "fwd", "fwi", "gdp", "pop", "pri", "natd") # shorthand name for all datasets
+keys <- c("wp", "ws", "fw", "fwa", "fwd", "fwi", "gdp", "pop", "pri", "natd", "prec") # shorthand name for all datasets
 years <- sub("^X", "", names(missing_prop_year[[1]]))  # all years
 
 # Build the data frame dynamically
@@ -105,7 +107,7 @@ ggplot(missing_per_country_long, aes(x = reorder(Country, -MissingPercent), y = 
 normal_dataset <- list(
   wp = water_productivity, ws = water_stress, fw = annual_freshwater_withdrawals,
   fwa = afwd_agriculture, fwd = afwd_domestic, fwi = afwd_industry,
-  gdp = gdp_per_capita, pop = population
+  gdp = gdp_per_capita, pop = population, prec = precipitation
 )
 
 # Define threshold for acceptable missing data per year 
@@ -273,7 +275,7 @@ save_targets <- list(
 rds_outputs <- c(
   setNames(filtered_all, c(
     "water_productivity", "water_stress", "withdrawals",
-    "agriculture", "domestic", "industry",
+    "agriculture", "domestic", "industry", "precipitation", 
     "gdppc", "population", "private_investment", "natural_disasters"
   )),
   save_targets
@@ -283,3 +285,4 @@ rds_outputs <- c(
 invisible(lapply(names(rds_outputs), function(name) {
   saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
 }))
+
