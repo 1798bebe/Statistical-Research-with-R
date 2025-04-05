@@ -275,8 +275,8 @@ save_targets <- list(
 rds_outputs <- c(
   setNames(filtered_all, c(
     "water_productivity", "water_stress", "withdrawals",
-    "agriculture", "domestic", "industry", "precipitation", 
-    "gdppc", "population", "private_investment", "natural_disasters"
+    "agriculture", "domestic", "industry", "gdppc",  
+    "population", "private_investment", "natural_disasters", "precipitation"
   )),
   save_targets
 )
