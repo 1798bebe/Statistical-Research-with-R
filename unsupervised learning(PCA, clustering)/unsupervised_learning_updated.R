@@ -1,13 +1,9 @@
 # ================================
-# 0. Setup and Data Loading
+# 0. Setup: Working Directory, Libraries, and Constants
 # ================================
 setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/filtered_dataset_finalized")
 
-rds_files <- list.files(pattern = "\\.rds$")
-for (file in rds_files) {
-  assign(tools::file_path_sans_ext(file), readRDS(file))
-}
-
+# Libraries
 library(tidyverse)
 library(cluster)
 library(factoextra)
@@ -15,151 +11,310 @@ library(clusterSim)
 library(dbscan)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(sf)
+library(stringr)
+library(scales)
 
 YEAR_RANGE <- paste0("X", 2012:2021)
 
-for (name in c("gdp_usd", "available_resources", "water_productivity",
-               "agriculture", "domestic", "gdppc", "population", "precipitation")) {
-  temp <- get(name, envir = .GlobalEnv)
+# ================================
+# 1. Load and Preprocess Data
+# ================================
+rds_files <- list.files(pattern = "\\.rds$")
+for (file in rds_files) {
+  assign(tools::file_path_sans_ext(file), readRDS(file))
+}
+
+# Regression Imputation for natural disasters 
+natural_disasters <- natural_disasters %>%
+  filter(Country.Code %in% water_stress$Country.Code)
+
+nd <- natural_disasters %>%
+  left_join(info, by = "Country.Code") %>%
+  mutate(Region = as.factor(Region))
+
+nd_model <- lm(X2000 ~ Region, data = nd, na.action = na.exclude)
+
+nd$X2000_imputed <- ifelse(
+  is.na(nd$X2000),
+  predict(nd_model, newdata = nd),
+  nd$X2000
+)
+
+natural_disasters$X2000 <- nd$X2000_imputed
+
+for (year in YEAR_RANGE) {
+  natural_disasters[[year]] <- natural_disasters$X2000
+}
+natural_disasters <- dplyr::select(natural_disasters, -X2000)
+
+# Prepare for consistent indexing and merging.
+raw_feature_sources <- c("available_resources", "water_productivity", "industry",
+                         "agriculture", "domestic", "precipitation", 
+                         "water_stress", "withdrawals", "natural_disasters")
+
+for (name in raw_feature_sources) {
+  temp <- get(name)
   rownames(temp) <- temp$Country.Code
   assign(name, temp, envir = .GlobalEnv)
 }
 
-# ================================
-# 1. PCA: All Normal Variables
-# ================================
-pca_data <- data.frame(
-  GDP_USD             = rowMeans(gdp_usd[ , YEAR_RANGE], na.rm = TRUE),
-  Available_Resources = rowMeans(available_resources[ , YEAR_RANGE], na.rm = TRUE),
-  Water_Productivity  = rowMeans(water_productivity[ , YEAR_RANGE], na.rm = TRUE),
-  Agriculture         = rowMeans(agriculture[ , YEAR_RANGE], na.rm = TRUE),
-  Domestic            = rowMeans(domestic[ , YEAR_RANGE], na.rm = TRUE),
-  GDP_Per_Capita      = rowMeans(gdppc[ , YEAR_RANGE], na.rm = TRUE),
-  Population          = rowMeans(population[ , YEAR_RANGE], na.rm = TRUE),
-  Precipitation       = rowMeans(precipitation[ , YEAR_RANGE], na.rm = TRUE)
+aggregated_data <- data.frame(
+  available_resources = rowMeans(available_resources[, YEAR_RANGE], na.rm = TRUE),
+  water_productivity  = rowMeans(water_productivity[, YEAR_RANGE], na.rm = TRUE),
+  industry            = rowMeans(industry[, YEAR_RANGE], na.rm = TRUE),
+  agriculture         = rowMeans(agriculture[, YEAR_RANGE], na.rm = TRUE),
+  domestic            = rowMeans(domestic[, YEAR_RANGE], na.rm = TRUE),
+  precipitation       = rowMeans(precipitation[, YEAR_RANGE], na.rm = TRUE),
+  water_stress        = rowMeans(water_stress[, YEAR_RANGE], na.rm = TRUE),
+  withdrawals         = rowMeans(withdrawals[, YEAR_RANGE], na.rm = TRUE), 
+  natural_disasters   = rowMeans(natural_disasters[, YEAR_RANGE], na.rm = TRUE)
 )
 
-pca_result <- prcomp(pca_data, scale. = TRUE)
-fviz_pca_var(pca_result, col.var = "contrib") + labs(title = "PCA: All Normal Variables")
-summary(pca_result)
+# ================================
+# 2. Generate Feature Combinations
+# ================================
+feature_sets <- list()
+combo_id <- 1
+for (k in 3:length(raw_feature_sources)) {
+  combos <- combn(raw_feature_sources, k, simplify = FALSE)
+  for (combo in combos) {
+    feature_sets[[paste0("Set_", combo_id)]] <- combo
+    combo_id <- combo_id + 1
+  }
+}
 
 # ================================
-# 2. Clustering Preparation & PCA
+# 3. Clustering Grid Search
 # ================================
-clustering_data <- data.frame(
-  Available_Resources = rowMeans(available_resources[ , YEAR_RANGE], na.rm = TRUE),
-  Agriculture         = rowMeans(agriculture[ , YEAR_RANGE], na.rm = TRUE),
-  Domestic            = rowMeans(domestic[ , YEAR_RANGE], na.rm = TRUE)
+num_pc_options <- 2:8
+epsilon_values <- seq(0.0, 2.0, by = 0.2)
+minpts_values <- 2:8
+cluster_counts <- 2:4
+results <- data.frame()
+
+for (features in feature_sets) {
+  scaled_data <- scale(aggregated_data[, features, drop = FALSE]) # Normalization 
+  
+  for (n_pc in num_pc_options) {                 # Apply PCA to the scaled data and extract the first n_pc principal components
+    pca <- prcomp(scaled_data, scale. = FALSE)
+    if (n_pc > ncol(pca$x)) next
+    reduced_data <- pca$x[, 1:n_pc, drop = FALSE]
+    
+    # DBSCAN
+    for (eps in epsilon_values) {
+      for (minpts in minpts_values) {
+        db_result <- dbscan(reduced_data, eps = eps, minPts = minpts)
+        labels <- db_result$cluster
+        valid <- labels != 0
+        sil_score <- if (length(unique(labels[valid])) >= 2) mean(silhouette(labels, dist(reduced_data))[, 3]) else NA
+        dbi_score <- if (!is.na(sil_score)) index.DB(reduced_data[valid, ], labels[valid])$DB else NA
+        
+        results <- rbind(results, data.frame(
+          Method = "DBSCAN",
+          Feature_Set = paste(features, collapse = ", "),
+          PCs = n_pc,
+          Param = paste0("eps=", round(eps, 3), ", minPts=", minpts),
+          Num_Clusters = length(unique(labels[valid])), # Only measure valid clusters, not noise
+          Silhouette = sil_score,
+          DB_Index = dbi_score,
+          Labels = I(list(labels))
+        ))
+      }
+    }
+    
+    # KMeans
+    for (k in cluster_counts) {
+      labels <- kmeans(reduced_data, centers = k, nstart = 25)$cluster
+      sil_score <- mean(silhouette(labels, dist(reduced_data))[, 3])
+      dbi_score <- index.DB(reduced_data, labels)$DB
+      
+      results <- rbind(results, data.frame(
+        Method = "KMeans",
+        Feature_Set = paste(features, collapse = ", "),
+        PCs = n_pc,
+        Param = k,
+        Num_Clusters = length(unique(labels)),
+        Silhouette = sil_score,
+        DB_Index = dbi_score,
+        Labels = I(list(labels))
+      ))
+    }
+    
+    # Hierarchical
+    dist_mat <- dist(reduced_data)
+    hclust_model <- hclust(dist_mat, method = "ward.D2")
+    for (k in cluster_counts) {
+      labels <- cutree(hclust_model, k = k)
+      sil_score <- mean(silhouette(labels, dist_mat)[, 3])
+      dbi_score <- index.DB(reduced_data, labels)$DB
+      
+      results <- rbind(results, data.frame(
+        Method = "Hierarchical",
+        Feature_Set = paste(features, collapse = ", "),
+        PCs = n_pc,
+        Param = k,
+        Num_Clusters = length(unique(labels)),
+        Silhouette = sil_score,
+        DB_Index = dbi_score,
+        Labels = I(list(labels))
+      ))
+    }
+  }
+}
+
+write.csv(results, "clustering_results.csv", row.names = FALSE)
+
+# ================================
+# 4. Evaluate and Visualize Best Clustering Result
+# ================================
+# Filter rows with valid Silhouette, DBI and Number of Clusters 
+results_clean <- results %>%
+  filter(
+    is.finite(Silhouette),
+    is.finite(DB_Index),
+    !is.null(Labels),
+    Num_Clusters >= 3, 
+    Num_Clusters <= 5
+  )
+
+# Compute Max-Min Ratio for cluster size balance
+results_clean$MaxMinRatio <- sapply(results_clean$Labels, function(lbls) {
+  sizes <- table(lbls[lbls != 0])  # Exclude noise (label 0)
+  if (length(sizes) <= 1) return(NA)
+  max(sizes) / min(sizes)
+})
+
+# Normalize Silhouette and DBI, then compute composite score
+results_clean$Silhouette_Norm <- rescale(results_clean$Silhouette, to = c(0, 1))
+results_clean$DBI_Norm_Inv <- 1 - rescale(results_clean$DB_Index, to = c(0, 1))
+results_clean$CompositeScore <- 0.5 * results_clean$Silhouette_Norm + 0.5 * results_clean$DBI_Norm_Inv
+
+# Filter well-balanced results
+balanced_results <- results_clean %>%
+  filter(!is.na(MaxMinRatio), MaxMinRatio < 10)
+
+# Select top configurations
+sorted_results <- balanced_results %>%
+  arrange(desc(CompositeScore))
+
+print(sorted_results)
+
+# Extract the best configuration
+best_result <- sorted_results[1, ]
+best_features <- str_split(best_result$Feature_Set, ",\\s*")[[1]]
+
+# Perform PCA on selected features
+scaled_input <- scale(aggregated_data[, best_features, drop = FALSE])
+pca_best <- prcomp(scaled_input, scale. = FALSE)
+reduced_best <- pca_best$x[, 1:best_result$PCs, drop = FALSE]
+cluster_labels <- unlist(best_result$Labels)
+
+# Final 2D PCA Biplot with Clusters and Arrows
+fviz_pca_biplot(
+  pca_best,
+  axes = c(1, 2),
+  geom.ind = "point",
+  col.ind = as.factor(cluster_labels),
+  pointshape = 21,
+  palette = "jco",
+  addEllipses = TRUE,
+  label = "var",        # show arrows only
+  col.var = "black",    # arrow color
+  repel = TRUE,
+  legend.title = "Cluster"
+) +
+  labs(title = paste("PCA Biplot with Clusters -", best_result$Method))
+
+# Prepare map data
+country_clusters <- data.frame(
+  Country.Code = rownames(aggregated_data),
+  Cluster = as.factor(cluster_labels)
 )
 
-pca_clustering <- prcomp(clustering_data, scale. = TRUE)
-pca_clustering_data <- pca_clustering$x[, 1:2]
+world <- ne_countries(scale = "medium", returnclass = "sf")
 
-fviz_pca_ind(pca_clustering, geom.ind = "point", pointshape = 21, pointsize = 2,
-             fill.ind = "skyblue", col.ind = "black", repel = TRUE) +
-  labs(title = "PCA: Selected Features Only") + theme_minimal()
+map_df <- left_join(world, country_clusters, by = c("iso_a3" = "Country.Code")) %>%
+  mutate(
+    Cluster = ifelse(Cluster == 0, NA, Cluster),
+    Cluster = as.factor(Cluster)
+  )
 
-# ================================
-# 3. Clustering: 3 Models
-# ================================
-set.seed(44)
-kmeans_result <- kmeans(pca_clustering_data, centers = 3, nstart = 25)
-dbscan_result <- dbscan(pca_clustering_data, eps = 1, minPts = 5)
-hclust_result <- hclust(dist(pca_clustering_data), method = "ward.D2")
-
-# ================================
-# 4. Cluster Visualizations
-# ================================
-fviz_cluster(list(data = pca_clustering_data, cluster = kmeans_result$cluster),
-             main = "K-means Clustering", ellipse.type = "t", geom = "point",
-             show.clust.cent = FALSE)
-
-fviz_cluster(list(data = pca_clustering_data, cluster = dbscan_result$cluster),
-             main = "DBSCAN Clustering", ellipse.type = "t", geom = "point",
-             show.clust.cent = FALSE)
-
-fviz_cluster(list(data = pca_clustering_data, cluster = cutree(hclust_result, 3)),
-             main = "Hierarchical Clustering", ellipse.type = "t", geom = "point",
-             show.clust.cent = FALSE)
+# Plot world map of clusters
+ggplot(map_df) +
+  geom_sf(aes(fill = Cluster), color = "gray80", size = 0.1) +
+  scale_fill_viridis_d(option = "plasma", direction = -1, na.value = "lightgray") +
+  labs(
+    title = paste("World Map -", best_result$Method, "Clustering"),
+    fill = "Cluster"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+  )
 
 # ================================
-# 5. Clustering Performance Evaluation
+# 5. Clustering Performance Comparison
 # ================================
-sil_kmeans <- silhouette(kmeans_result$cluster, dist(pca_clustering_data))
-sil_hier   <- silhouette(cutree(hclust_result, 3), dist(pca_clustering_data))
-sil_dbscan <- silhouette(as.numeric(dbscan_result$cluster), dist(pca_clustering_data))
-
-db_kmeans <- index.DB(pca_clustering_data, kmeans_result$cluster)$DB
-db_hier   <- index.DB(pca_clustering_data, cutree(hclust_result, 3))$DB
-
-valid <- dbscan_result$cluster != 0
-db_dbscan <- if (length(unique(dbscan_result$cluster[valid])) >= 2)
-  index.DB(pca_clustering_data[valid, ], dbscan_result$cluster[valid])$DB else NA
-
-cat("Silhouette Means:\n")
-cat("K-means     :", mean(sil_kmeans[, 3]), "\n")
-cat("DBSCAN      :", mean(sil_dbscan[, 3]), "\n")
-cat("Hierarchical:", mean(sil_hier[, 3]), "\n")
-
-cat("Davies-Bouldin Index:\n")
-cat("K-means     :", db_kmeans, "\n")
-cat("DBSCAN      :", db_dbscan, "\n")
-cat("Hierarchical:", db_hier, "\n")
-
-# ================================
-# 6. Silhouette Distribution Plot
-# ================================
-sil_all <- bind_rows(
-  as.data.frame(sil_kmeans) %>% mutate(Method = "K-means"),
-  as.data.frame(sil_hier)   %>% mutate(Method = "Hierarchical"),
-  as.data.frame(sil_dbscan) %>% mutate(Method = "DBSCAN")
-)
-
-ggplot(sil_all, aes(x = Method, y = sil_width, fill = Method)) +
+# Silhouette distribution
+sorted_results %>%
+  ggplot(aes(x = Method, y = Silhouette, fill = Method)) +
   geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, fill = "white", outlier.size = 0.5) +
-  labs(title = "Silhouette Score Distribution", y = "Silhouette Width") +
-  theme_minimal()
+  geom_boxplot(width = 0.1, outlier.shape = NA, fill = "white") +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black") +
+  labs(
+    title = "Silhouette Score Distribution by Clustering Method",
+    x = "Clustering Method",
+    y = "Silhouette Score"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
+
+# DB Index distribution
+sorted_results %>%
+  ggplot(aes(x = Method, y = DB_Index, fill = Method)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, fill = "white") +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black") +
+  labs(
+    title = "DB Index Distribution by Clustering Method",
+    x = "Clustering Method",
+    y = "DB Index"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
 
 # ================================
-# 7. K-means: Profile + Map + Save
+# 6. Cluster Profile
 # ================================
-# Verify the optimal k using Elbow method
-fviz_nbclust(pca_clustering_data, kmeans, method = "wss") +
-  labs(title = "Elbow Method for Optimal k")
-
-# Verify the optimal k using Silhouette method
-fviz_nbclust(pca_clustering_data, kmeans, method = "silhouette") +
-  labs(title = "Silhouette Method for Optimal k")
-
-clustering_dataset <- data.frame(
-  Country.Code = rownames(clustering_data),
-  clustering_data,
-  Cluster = as.factor(kmeans_result$cluster)
+log_cluster_data <- data.frame(
+  Cluster = as.factor(cluster_labels),
+  log10(aggregated_data[rownames(aggregated_data) %in% rownames(scaled_input), best_features, drop = FALSE] + 1)
 )
 
-# Profile plot
-cluster_profiles <- clustering_dataset %>%
+log_cluster_summary <- log_cluster_data %>%
   group_by(Cluster) %>%
-  summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
+  summarise(across(everything(), mean, na.rm = TRUE)) %>%
   pivot_longer(-Cluster, names_to = "Feature", values_to = "Mean")
 
-ggplot(cluster_profiles, aes(x = Feature, y = Mean, fill = Cluster)) +
+ggplot(log_cluster_summary, aes(x = Feature, y = Mean, fill = Cluster)) +
   geom_col(position = "dodge") +
-  scale_y_log10() +
-  labs(title = "Cluster Profiles (log scale)", y = "Average") +
-  theme_minimal()
+  labs(title = "Cluster Profile (log10 transformed)", y = "Log10(Mean + 1)", x = "Feature") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 
-# World map
-world <- ne_countries(scale = "medium", returnclass = "sf")
-map_data <- left_join(world, clustering_dataset, by = c("iso_a3" = "Country.Code"))
+# ================================
+# 7. Save files regarding the best result
+# ================================
+# Save cluster labels with country codes
+write.csv(country_clusters, "best_cluster_labels.csv", row.names = FALSE)
 
-ggplot(map_data) +
-  geom_sf(aes(fill = Cluster)) +
-  labs(title = "World Map: Clustered Countries") +
-  theme_void()
+# Save PCA object and cluster assignments
+saveRDS(pca_best, "best_pca_model.rds")
+saveRDS(best_result, "best_clustering_config.rds")
 
-# Save result
-setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/clustering")
-write.csv(clustering_dataset, "clustering_result.csv", row.names = FALSE)
-saveRDS(kmeans_result, "kmeans_result_k3.rds")
+# Save clustered and reduced PCA data
+clustered_data <- data.frame(reduced_best, Cluster = cluster_labels)
+write.csv(clustered_data, "best_clustered_data.csv", row.names = TRUE)
