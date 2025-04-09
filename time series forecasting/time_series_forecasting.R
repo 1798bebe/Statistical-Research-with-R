@@ -3,7 +3,8 @@
 # ================================
 
 # Set working directory (update path as needed)
-setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/filtered_dataset_optimized")
+setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/filtered_dataset_finalized")
+setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/time_series_forecasting")
 
 # Load all .rds files in the directory
 rds_files <- list.files(pattern = "\\.rds$")
@@ -17,6 +18,7 @@ library(tidyverse)
 library(forecast)
 library(prophet)
 library(lubridate)
+library(tseries)
 setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset/time_series_forecasting")
 
 # ================================
@@ -67,6 +69,18 @@ ggplot(df, aes(x = Year, y = Value)) +
 ts_germany <- ts(df$Value, start = min(df$Year), frequency = 1) 
 # frequency = 1 means yearly data (as opposed to monthly = 12, quarterly = 4).
 
+# Estimate lambda for Box-Cox transformation
+lambda <- BoxCox.lambda(ts_germany)
+cat("Suggested Box-Cox lambda:", lambda, "\n")
+
+# Check for stationarity using Augmented Dickey-Fuller Test
+adf_test <- tseries::adf.test(ts_germany, alternative = "stationary")
+print(adf_test)
+
+# Plot ACF and PACF to visually inspect autocorrelation
+acf(ts_germany, main = "ACF - Germany Withdrawals")
+pacf(ts_germany, main = "PACF - Germany Withdrawals")
+
 # Fit ARIMA model: This uses the auto.arima() function to automatically determine 
 # the best-fitting ARIMA model for the time series.
 arima_model <- auto.arima(ts_germany)
@@ -86,6 +100,12 @@ write.csv(arima_out, "arima_forecast_values.csv", row.names = FALSE)
 
 # Display model summary
 summary(arima_model)
+
+# Residual diagnostics
+checkresiduals(arima_model)  # Includes Ljung-Box test, residual ACF, histogram
+
+# Q-Q plot for normality check
+qqnorm(residuals(arima_model)); qqline(residuals(arima_model), col = "red")
 
 # --- Evaluation on Held-Out Test Set (2018–2021) ---
 
@@ -112,6 +132,46 @@ cat("ARIMA Metrics:\n")
 cat("MAE: ", MAE, "\nRMSE:", RMSE, "\nMAPE:", MAPE, "%\n")
 
 # ================================
+# 2.1 Rolling Forecast Evaluation (ARIMA)
+# ================================
+
+# Define rolling parameters
+start_year <- 2003  
+end_year <- 2020    
+horizon <- 1        # Forecast 1 year ahead in each loop
+
+# Initialize vectors
+rolling_mae <- c()
+rolling_rmse <- c()
+rolling_mape <- c()
+
+# Perform rolling forecast
+for (i in start_year:end_year) {
+  train_set <- df %>% filter(Year <= i)
+  test_set <- df %>% filter(Year == i + horizon)
+  
+  # Skip if test value is missing
+  if (nrow(test_set) == 0 || any(is.na(test_set$Value))) next
+  
+  ts_train <- ts(train_set$Value, start = min(train_set$Year), frequency = 1)
+  model <- auto.arima(ts_train)
+  forecast_result <- forecast(model, h = horizon)
+  
+  pred <- as.numeric(forecast_result$mean)
+  act <- test_set$Value
+  
+  rolling_mae  <- c(rolling_mae, mean(abs(act - pred)))
+  rolling_rmse <- c(rolling_rmse, sqrt(mean((act - pred)^2)))
+  rolling_mape <- c(rolling_mape, mean(abs((act - pred) / act)) * 100)
+}
+
+# Print average results
+cat("ARIMA Rolling Forecast Metrics:\n")
+cat("Mean MAE: ", mean(rolling_mae), "\n")
+cat("Mean RMSE:", mean(rolling_rmse), "\n")
+cat("Mean MAPE:", mean(rolling_mape), "%\n")
+
+# ================================
 # 3. Prophet Forecasting
 # ================================
 
@@ -133,6 +193,7 @@ forecast_prophet <- predict(prophet_model, future)
 
 # Save Prophet forecast plot
 p_prophet <- plot(prophet_model, forecast_prophet) +
+  geom_vline(xintercept = as.numeric(prophet_model$changepoints), linetype = "dashed", color = "red") +
   ggtitle("Prophet Forecast - Germany Freshwater Withdrawals")
 ggsave("prophet_forecast_plot.png", plot = p_prophet, width = 8, height = 5)
 
@@ -143,7 +204,8 @@ write.csv(prophet_out, "prophet_forecast_values.csv", row.names = FALSE)
 # Save trend and uncertainty components
 p_components <- prophet_plot_components(prophet_model, forecast_prophet)
 
-# Save each component separately (There is only one component though.)
+# Save each component separately (This is practically the same as the forecasting plot.
+# because there is no other components than the trend i.e. no seasonality, no holiday effects)
 for (i in seq_along(p_components)) {
   ggsave(
     filename = paste0("prophet_component_", i, ".png"),
@@ -180,3 +242,51 @@ MAPE <- mean(abs((actual - predicted) / actual)) * 100
 cat("Prophet Metrics:\n")
 cat("MAE: ", MAE, "\nRMSE:", RMSE, "\nMAPE:", MAPE, "%\n")
 
+# ================================
+# 3.1 Rolling Forecast Evaluation (Prophet)
+# ================================
+
+# Define rolling parameters
+start_year <- 2003
+end_year <- 2020
+horizon <- 1
+
+# Initialize metrics
+rolling_mae_prophet <- c()
+rolling_rmse_prophet <- c()
+rolling_mape_prophet <- c()
+
+# Perform rolling forecast
+for (i in start_year:end_year) {
+  train_set <- df %>% filter(Year <= i)
+  test_set <- df %>% filter(Year == i + horizon)
+  
+  # Skip if test value is missing
+  if (nrow(test_set) == 0 || any(is.na(test_set$Value))) next
+  
+  # Prepare data for Prophet
+  prophet_train <- train_set %>%
+    rename(ds = Year, y = Value) %>%
+    mutate(ds = ymd(paste0(ds, "-01-01")))
+  
+  prophet_model <- prophet(prophet_train, yearly.seasonality = FALSE, verbose = FALSE)
+  
+  # Create future dataframe and predict
+  future_df <- make_future_dataframe(prophet_model, periods = horizon, freq = "year")
+  forecast_df <- predict(prophet_model, future_df)
+  
+  # Get forecast for next year
+  target_date <- ymd(paste0(i + horizon, "-01-01"))
+  pred <- forecast_df %>% filter(ds == target_date) %>% pull(yhat)
+  act <- test_set$Value
+  
+  rolling_mae_prophet  <- c(rolling_mae_prophet, mean(abs(act - pred)))
+  rolling_rmse_prophet <- c(rolling_rmse_prophet, sqrt(mean((act - pred)^2)))
+  rolling_mape_prophet <- c(rolling_mape_prophet, mean(abs((act - pred) / act)) * 100)
+}
+
+# Print average results
+cat("Prophet Rolling Forecast Metrics:\n")
+cat("Mean MAE: ", mean(rolling_mae_prophet), "\n")
+cat("Mean RMSE:", mean(rolling_rmse_prophet), "\n")
+cat("Mean MAPE:", mean(rolling_mape_prophet), "%\n")
