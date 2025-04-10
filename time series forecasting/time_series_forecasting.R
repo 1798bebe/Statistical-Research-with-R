@@ -104,9 +104,6 @@ summary(arima_model)
 # Residual diagnostics
 checkresiduals(arima_model)  # Includes Ljung-Box test, residual ACF, histogram
 
-# Q-Q plot for normality check
-qqnorm(residuals(arima_model)); qqline(residuals(arima_model), col = "red")
-
 # --- Evaluation on Held-Out Test Set (2018–2021) ---
 
 # Split into training and testing sets
