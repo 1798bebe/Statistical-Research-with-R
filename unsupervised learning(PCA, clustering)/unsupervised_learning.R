@@ -14,6 +14,7 @@ library(rnaturalearthdata)
 library(sf)
 library(stringr)
 library(scales)
+library(gridExtra)
 
 YEAR_RANGE <- paste0("X", 2012:2021)
 
@@ -71,7 +72,18 @@ aggregated_data <- data.frame(
   natural_disasters   = rowMeans(natural_disasters[, YEAR_RANGE], na.rm = TRUE)
 )
 
+# Visualize the features by countries 
+plot_list <- lapply(raw_feature_sources, function(feat) {
+  ggplot(aggregated_data, aes_string(x = feat)) +
+    geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+    labs(title = feat, x = NULL, y = "Count") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size = 12))
+})
 
+do.call(grid.arrange, c(plot_list, ncol = 3))
+
+# PCA 
 pca_all <- prcomp(scale(aggregated_data), scale. = FALSE)
 pca_summary <- summary(pca_all)
 print(pca_summary)
@@ -83,7 +95,7 @@ feature_sets <- list()
 combo_id <- 1
 for (k in 2:length(raw_feature_sources)) {
   combos <- combn(raw_feature_sources, k, simplify = FALSE)
-  for (combo in combos) {
+  for (combo in combos) {r
     feature_sets[[paste0("Set_", combo_id)]] <- combo
     combo_id <- combo_id + 1
   }
