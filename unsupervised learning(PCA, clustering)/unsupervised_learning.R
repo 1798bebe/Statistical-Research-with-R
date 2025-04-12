@@ -280,38 +280,7 @@ ggplot(map_df) +
   )
 
 # ================================
-# 5. Clustering Performance Comparison
-# ================================
-# Silhouette distribution
-sorted_results %>%
-  ggplot(aes(x = Method, y = Silhouette, fill = Method)) +
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, fill = "white") +
-  stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black") +
-  labs(
-    title = "Silhouette Score Distribution by Clustering Method",
-    x = "Clustering Method",
-    y = "Silhouette Score"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
-
-# DB Index distribution
-sorted_results %>%
-  ggplot(aes(x = Method, y = DB_Index, fill = Method)) +
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, fill = "white") +
-  stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black") +
-  labs(
-    title = "DB Index Distribution by Clustering Method",
-    x = "Clustering Method",
-    y = "DB Index"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
-
-# ================================
-# 6. Cluster Profile
+# 5. Cluster Profile
 # ================================
 # Step 1: Compute cluster summary using original (non-log) values
 cluster_data <- data.frame(
@@ -340,7 +309,7 @@ ggplot(log_cluster_summary, aes(x = Feature, y = Mean, fill = Cluster)) +
   )
 
 # ================================
-# 7. Save files regarding the best result
+# 6. Save files regarding the best result
 # ================================
 # Save cluster labels with country codes
 write.csv(country_clusters, "best_cluster_labels.csv", row.names = FALSE)
