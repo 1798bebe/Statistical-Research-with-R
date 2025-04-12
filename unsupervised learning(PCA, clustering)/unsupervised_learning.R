@@ -71,12 +71,17 @@ aggregated_data <- data.frame(
   natural_disasters   = rowMeans(natural_disasters[, YEAR_RANGE], na.rm = TRUE)
 )
 
+
+pca_all <- prcomp(scale(aggregated_data), scale. = FALSE)
+pca_summary <- summary(pca_all)
+print(pca_summary)
+
 # ================================
 # 2. Generate Feature Combinations
 # ================================
 feature_sets <- list()
 combo_id <- 1
-for (k in 3:length(raw_feature_sources)) {
+for (k in 2:length(raw_feature_sources)) {
   combos <- combn(raw_feature_sources, k, simplify = FALSE)
   for (combo in combos) {
     feature_sets[[paste0("Set_", combo_id)]] <- combo
@@ -174,8 +179,8 @@ results_clean <- results %>%
     is.finite(Silhouette),
     is.finite(DB_Index),
     !is.null(Labels),
-    Num_Clusters >= 3, 
-    Num_Clusters <= 5
+    Num_Clusters >= 2, 
+    Num_Clusters <= 4
   )
 
 # Compute Max-Min Ratio for cluster size balance
@@ -185,14 +190,19 @@ results_clean$MaxMinRatio <- sapply(results_clean$Labels, function(lbls) {
   max(sizes) / min(sizes)
 })
 
+# Compute proportion of missing or noise labels (label == 0)
+results_clean$MissingRate <- sapply(results_clean$Labels, function(lbls) {
+  mean(lbls == 0 | is.na(lbls))
+})
+
 # Normalize Silhouette and DBI, then compute composite score
 results_clean$Silhouette_Norm <- rescale(results_clean$Silhouette, to = c(0, 1))
 results_clean$DBI_Norm_Inv <- 1 - rescale(results_clean$DB_Index, to = c(0, 1))
 results_clean$CompositeScore <- 0.5 * results_clean$Silhouette_Norm + 0.5 * results_clean$DBI_Norm_Inv
 
-# Filter well-balanced results
+# Filter well-balanced results with missing rate 20% at most
 balanced_results <- results_clean %>%
-  filter(!is.na(MaxMinRatio), MaxMinRatio < 10)
+  filter(!is.na(MaxMinRatio), MaxMinRatio < 10, MissingRate <= 0.20)
 
 # Select top configurations
 sorted_results <- balanced_results %>%
@@ -203,6 +213,13 @@ print(sorted_results)
 # Extract the best configuration
 best_result <- sorted_results[1, ]
 best_features <- str_split(best_result$Feature_Set, ",\\s*")[[1]]
+
+# Print out the metrics
+cat("Best Clustering Configuration:\n")
+cat("Silhouette Score:", round(best_result$Silhouette, 4), "\n")
+cat("DB Index:", round(best_result$DB_Index, 4), "\n")
+cat("MaxMinRatio:", round(best_result$MaxMinRatio, 2), "\n")
+cat("Missing Label Rate:", round(best_result$MissingRate * 100, 2), "%\n")
 
 # Perform PCA on selected features
 scaled_input <- scale(aggregated_data[, best_features, drop = FALSE])
@@ -236,17 +253,25 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 
 map_df <- left_join(world, country_clusters, by = c("iso_a3" = "Country.Code")) %>%
   mutate(
-    Cluster = ifelse(Cluster == 0, NA, Cluster),
-    Cluster = as.factor(Cluster)
+    Cluster = as.factor(Cluster)  # Don't convert 0 to NA
   )
 
-# Plot world map of clusters
+# Define custom colors for clusters 
+custom_colors <- c(
+  "0" = "#90FE10",   
+  "1" = "#FFD700",   
+  "2" = "#1E90FF"    
+)
+
+# Plot world map of clusters with manual colors
 ggplot(map_df) +
   geom_sf(aes(fill = Cluster), color = "gray80", size = 0.1) +
-  scale_fill_viridis_d(option = "plasma", direction = -1, na.value = "lightgray") +
+  scale_fill_manual(
+    values = custom_colors,
+    name = "Cluster"
+  ) +
   labs(
-    title = paste("World Map -", best_result$Method, "Clustering"),
-    fill = "Cluster"
+    title = paste("World Map -", best_result$Method, "Clustering")
   ) +
   theme_void() +
   theme(
@@ -288,22 +313,31 @@ sorted_results %>%
 # ================================
 # 6. Cluster Profile
 # ================================
-log_cluster_data <- data.frame(
+# Step 1: Compute cluster summary using original (non-log) values
+cluster_data <- data.frame(
   Cluster = as.factor(cluster_labels),
-  log10(aggregated_data[rownames(aggregated_data) %in% rownames(scaled_input), best_features, drop = FALSE] + 1)
+  aggregated_data[rownames(aggregated_data) %in% rownames(scaled_input), best_features, drop = FALSE]
 )
 
-log_cluster_summary <- log_cluster_data %>%
+cluster_summary <- cluster_data %>%
   group_by(Cluster) %>%
-  summarise(across(everything(), mean, na.rm = TRUE)) %>%
+  summarise(across(everything(), mean, na.rm = TRUE), .groups = "drop")
+
+# Step 2: For plotting, apply log10 transformation (+1) to the values
+log_cluster_summary <- cluster_summary %>%
+  mutate(across(-Cluster, ~log10(.x + 1))) %>%
   pivot_longer(-Cluster, names_to = "Feature", values_to = "Mean")
 
+# Step 3: Plot using log-transformed values
 ggplot(log_cluster_summary, aes(x = Feature, y = Mean, fill = Cluster)) +
   geom_col(position = "dodge") +
-  labs(title = "Cluster Profile (log10 transformed)", y = "Log10(Mean + 1)", x = "Feature") +
+  labs(title = "Cluster Profile (log10 transformed for visualization)", 
+       y = "Log10(Mean + 1)", x = "Feature") +
   theme_minimal() +
-  theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
 # ================================
 # 7. Save files regarding the best result
