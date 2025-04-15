@@ -25,29 +25,6 @@ for (file in rds_files) {
 }
 YEAR_RANGE <- paste0("X", 2012:2021)
 
-# Regression Imputation for natural disasters 
-natural_disasters <- natural_disasters %>%
-  filter(Country.Code %in% water_stress$Country.Code)
-
-nd <- natural_disasters %>%
-  left_join(info, by = "Country.Code") %>%
-  mutate(Region = as.factor(Region))
-
-nd_model <- lm(X2000 ~ Region, data = nd, na.action = na.exclude)
-
-nd$X2000_imputed <- ifelse(
-  is.na(nd$X2000),
-  predict(nd_model, newdata = nd),
-  nd$X2000
-)
-
-natural_disasters$X2000 <- nd$X2000_imputed
-
-for (year in YEAR_RANGE) {
-  natural_disasters[[year]] <- natural_disasters$X2000
-}
-natural_disasters <- dplyr::select(natural_disasters, -X2000)
-
 # Prepare for consistent indexing and merging.
 raw_feature_sources <- c("available_resources", "water_productivity", "industry",
                          "agriculture", "domestic", "precipitation", 
