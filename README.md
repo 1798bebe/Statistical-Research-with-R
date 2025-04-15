@@ -20,7 +20,7 @@ This research utilizes statistical and machine learning techniques to analyze gl
 
 - Exploratory and Inferential Data Analysis
 - Supervised Learning (Regression, Classification)
-- Final Report Completion (Including Visualization and Interpretation and Policy Recommendations)
+- Final Report Completion (Including Visualization, Interpretation and Policy Recommendations)
 
 ## Deadline
 
