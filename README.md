@@ -4,10 +4,10 @@ This research utilizes statistical and machine learning techniques to analyze gl
 
 ## Current Progress
 
-- Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for GDP per capita.
+- Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for natural disasters.
   - [🧠 R Code ](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) (completed)
 
-- PCA conducted for dimensionality reduction, followed by K-means clustering on selected features, evaluated using Silhouette and Davies-Bouldin indices.
+- PCA used for dimensionality reduction, and DBSCAN applied to selected features after a full grid search. Clustering evaluated using a composite score based on the Silhouette coefficient and Davies–Bouldin index, with filters on cluster balance and label coverage.
   - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/unsupervised%20learning(PCA%2C%20clustering)/report_unsupervised_learning.pdf) (completed)
   - [🧠 R Code](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/unsupervised%20learning(PCA%2C%20clustering)/unsupervised_learning.R) (completed)
 
