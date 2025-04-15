@@ -16,8 +16,6 @@ library(stringr)
 library(scales)
 library(gridExtra)
 
-YEAR_RANGE <- paste0("X", 2012:2021)
-
 # ================================
 # 1. Load and Preprocess Data
 # ================================
@@ -25,6 +23,7 @@ rds_files <- list.files(pattern = "\\.rds$")
 for (file in rds_files) {
   assign(tools::file_path_sans_ext(file), readRDS(file))
 }
+YEAR_RANGE <- paste0("X", 2012:2021)
 
 # Regression Imputation for natural disasters 
 natural_disasters <- natural_disasters %>%
