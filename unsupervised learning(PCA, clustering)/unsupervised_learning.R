@@ -95,7 +95,7 @@ feature_sets <- list()
 combo_id <- 1
 for (k in 2:length(raw_feature_sources)) {
   combos <- combn(raw_feature_sources, k, simplify = FALSE)
-  for (combo in combos) {r
+  for (combo in combos) {
     feature_sets[[paste0("Set_", combo_id)]] <- combo
     combo_id <- combo_id + 1
   }
