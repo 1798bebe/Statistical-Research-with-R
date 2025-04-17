@@ -195,7 +195,7 @@ p_prophet <- plot(prophet_model, forecast_prophet) +
 ggsave("prophet_forecast_plot.png", plot = p_prophet, width = 8, height = 5)
 
 # Save Prophet forecast values
-prophet_out <- forecast_prophet %>% select(ds, yhat, yhat_lower, yhat_upper)
+prophet_out <- forecast_prophet %>% dplyr::select(ds, yhat, yhat_lower, yhat_upper)
 write.csv(prophet_out, "prophet_forecast_values.csv", row.names = FALSE)
 
 # Save trend and uncertainty components
