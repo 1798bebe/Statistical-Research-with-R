@@ -137,7 +137,7 @@ valid_countries <- Reduce(intersect, lapply(
 filter_dataset <- function(data, valid_countries, valid_years) {
   data %>%
     filter(Country.Code %in% valid_countries) %>%
-    select(1:4, all_of(valid_years))
+    dplyr::select(1:4,all_of(valid_years))
 }
 
 # Apply filtering to the normal datasets
@@ -206,8 +206,8 @@ print(paste("Percentage of remaining data after filtering:", round(percent_remai
 # because the global sea level data is available from 1993. 
 # Extract columns where the year is ≥ 1993
 year_cols <- gdp_per_capita %>%
-  select(starts_with("X")) %>%
-  select( which(as.numeric(sub("X", "", colnames(.))) >= 1993) )
+  dplyr::select(starts_with("X")) %>%
+  dplyr::select( which(as.numeric(sub("X", "", colnames(.))) >= 1993) )
 
 # Combine with metadata columns
 gdppc_from1993 <- bind_cols(gdp_per_capita[ ,1:4], year_cols)
@@ -281,6 +281,10 @@ rds_outputs <- c(
   save_targets
 )
 
+# Save all RDS files
+invisible(lapply(names(rds_outputs), function(name) {
+  saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
+}))
 # Save all RDS files
 invisible(lapply(names(rds_outputs), function(name) {
   saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
