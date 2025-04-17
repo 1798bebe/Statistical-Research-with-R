@@ -285,7 +285,3 @@ rds_outputs <- c(
 invisible(lapply(names(rds_outputs), function(name) {
   saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
 }))
-# Save all RDS files
-invisible(lapply(names(rds_outputs), function(name) {
-  saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
-}))
