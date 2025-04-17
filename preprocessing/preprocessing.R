@@ -63,7 +63,7 @@ ggplot(missing_raw, aes(x = Missing_Proportion, y = reorder(Dataset, Missing_Pro
 missing_prop_year <- lapply(alldata, calculate_year_missing)
 missing_prop_country <- lapply(alldata, calculate_country_missing)
 
-keys <- c("wp", "ws", "fw", "fwa", "fwd", "fwi", "gdp", "pop", "pri", "natd", "prec") # shorthand name for all datasets
+keys <- c("wp", "ws", "fw", "fwa", "fwd", "fwi", "gdp", "pop", "prec", "pri", "natd") # shorthand name for all datasets
 years <- sub("^X", "", names(missing_prop_year[[1]]))  # all years
 
 # Build the data frame dynamically
@@ -233,29 +233,6 @@ gdppc_from1993_merged <- ungroup(gdppc_from1993_merged)
 # tend to have similar economic structures, development levels, and spending patterns, making their GDP per capita values more comparable.
 # Regression analysis of annual freshwater withdrawals by population will be done later. 
 
-# Conduct Regression Imputation again, this time for natural disasters 
-natural_disasters <- natural_disasters %>%
-  filter(Country.Code %in% water_stress$Country.Code)
-
-nd <- natural_disasters %>%
-  left_join(info, by = "Country.Code") %>%
-  mutate(Region = as.factor(Region))
-
-nd_model <- lm(X2000 ~ Region, data = nd, na.action = na.exclude)
-
-nd$X2000_imputed <- ifelse(
-  is.na(nd$X2000),
-  predict(nd_model, newdata = nd),
-  nd$X2000
-)
-
-natural_disasters$X2000 <- nd$X2000_imputed
-
-for (year in YEAR_RANGE) {
-  natural_disasters[[year]] <- natural_disasters$X2000
-}
-natural_disasters <- dplyr::select(natural_disasters, -X2000)
-  
 # Derived Feature Construction
 # Reconstruct GDP in constant USD: GDP = water_productivity × withdrawals
 gdp_usd <- data.frame(
@@ -299,7 +276,7 @@ rds_outputs <- c(
   setNames(filtered_all, c(
     "water_productivity", "water_stress", "withdrawals",
     "agriculture", "domestic", "industry", "gdppc",  
-    "population", "private_investment", "natural_disasters", "precipitation"
+    "population", "precipitation", "private_investment", "natural_disasters"
   )),
   save_targets
 )
@@ -308,4 +285,3 @@ rds_outputs <- c(
 invisible(lapply(names(rds_outputs), function(name) {
   saveRDS(rds_outputs[[name]], paste0(name, ".rds"))
 }))
-
