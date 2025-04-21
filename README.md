@@ -7,6 +7,8 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for natural disasters.
   - [🧠 R Code ](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) (completed)
 
+- Supervised learning applied to classify country population‑growth categories from water‑related features using nested cross‑validation (Random Forest, XGBoost, GLMNET plus random‑baseline); random‑search hyperparameter tuning optimizing F1‑score; pairwise Wilcoxon tests for performance comparison; GLMNET interpretability via odds ratios, variable‑importance rankings, and partial‑dependence plots; global choropleth mapping of misclassifications.
+  
 - Unsupervised learning applied to water-related indicators using PCA and clustering (K-means, DBSCAN, hierarchical), with exhaustive grid search across feature subsets and parameters; policy-relevant cluster profiles derived from the best configuration.
   - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/unsupervised%20learning(PCA%2C%20clustering)/report_unsupervised_learning.pdf) (completed)
   - [🧠 R Code](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/unsupervised%20learning(PCA%2C%20clustering)/unsupervised_learning.R) (completed)
@@ -19,7 +21,6 @@ This research utilizes statistical and machine learning techniques to analyze gl
 ## Next Steps 
 
 - Exploratory and Inferential Data Analysis
-- Supervised Learning (Regression, Classification)
 - Final Report Completion (Including Visualization, Interpretation and Policy Recommendations)
 
 ## Deadline
