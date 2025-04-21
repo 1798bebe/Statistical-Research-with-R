@@ -8,7 +8,8 @@ This research utilizes statistical and machine learning techniques to analyze gl
   - [🧠 R Code ](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) (completed)
 
 - Supervised learning applied to classify country population‑growth via nested CV (Random Forest, XGBoost, GLMNET, random‑baseline) with F1‑optimized random‑search tuning, pairwise Wilcoxon tests, GLMNET interpretability (odds ratios, variable importance, PDPs) and choropleth misclassification mapping.
-  https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/Supervised%20Learning%20(Regression%2C%20Classification)/binary%20classification.R)
+  - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/Supervised%20Learning%20%28Regression%2C%20Classification%29/report_supervised_learning_part2.pdf) (completed)  
+  - [🧠 R Code](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/Supervised%20Learning%20%28Regression%2C%20Classification%29/binary%20classification.R) (completed)
 
   
 - Unsupervised learning applied to water-related indicators using PCA and clustering (K-means, DBSCAN, hierarchical), with exhaustive grid search across feature subsets and parameters; policy-relevant cluster profiles derived from the best configuration.
