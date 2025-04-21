@@ -20,11 +20,8 @@ This research utilizes statistical and machine learning techniques to analyze gl
   - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/time%20series%20forecasting/report_time_series_forecasting.pdf) (completed)
   - [🧠 R Code](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/time%20series%20forecasting/time_series_forecasting.R) (completed)
   
-
-## Next Steps 
-
-- Exploratory and Inferential Data Analysis
-- Final Report Completion (Including Visualization, Interpretation and Policy Recommendations)
+- Exploratory Data Analysis (EDA) performed to support all three analytical streams: supervised learning, unsupervised learning, and time series forecasting.
+  
 
 ## Contributors
 
