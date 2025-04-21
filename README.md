@@ -26,6 +26,8 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Exploratory and Inferential Data Analysis
 - Final Report Completion (Including Visualization, Interpretation and Policy Recommendations)
 
-## Deadline
+## Contributors
 
-Project will be completed by **21st April**.
+Seunghyun Kim(Group Leader)
+Niran 
+Heejung Heo
