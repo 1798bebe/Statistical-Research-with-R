@@ -2,7 +2,7 @@
 
 This research utilizes statistical and machine learning techniques to analyze global water resource utilization, economic indicators, and climate trends.
 
-## Current Progress
+## Summary of Work
 
 - Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for natural disasters.
   - [🧠 R Code ](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) (completed)
@@ -23,8 +23,8 @@ This research utilizes statistical and machine learning techniques to analyze gl
 - Exploratory Data Analysis (EDA) performed to support all three analytical streams: supervised learning, unsupervised learning, and time series forecasting.
   
 
-## Contributors
+## Authors
 
-Seunghyun Kim(Group Leader)
-Niran 
-Heejung Heo
+- Seunghyun Kim (Group Leader)
+- Niran Raj Pradhan
+- Heejung Heo
