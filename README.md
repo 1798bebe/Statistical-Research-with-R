@@ -27,6 +27,7 @@ This study analyzes global and country‑level water‑use patterns by combining
 ## Appendix 
 
 - Explanation of the algorithms used:
+  [📄 Appendix (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/documents/model_explanation.pdf) 
 
 ## Authors
 
