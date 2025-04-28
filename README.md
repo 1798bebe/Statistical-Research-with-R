@@ -24,6 +24,9 @@ This study analyzes global and country‑level water‑use patterns by combining
   
 - Exploratory Data Analysis (EDA) performed to support all three analytical streams: supervised learning, unsupervised learning, and time series forecasting.
   
+## Appendix 
+
+- Explanation of the algorithms used:
 
 ## Authors
 
