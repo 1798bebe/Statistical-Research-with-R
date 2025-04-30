@@ -3,8 +3,9 @@ setwd("C:/Users/SEC/Desktop/2024WS/projectR/dataset")  # Please change this to y
 getwd
 
 library(tidyverse)
-library(naniar)
-library(mice)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
 
 population <- read.csv("population.csv", header = TRUE, skip = 4)
 private_investment <- read.csv("private_investment.csv", header = TRUE, skip = 4)
@@ -59,9 +60,8 @@ ggplot(missing_raw, aes(x = Missing_Proportion, y = reorder(Dataset, Missing_Pro
   theme_minimal()
 # Private Investment (97.62%) and Natural Disasters (99.01%) are almost entirely missing. They will be labeled 'problematic data'.
 
-# Compute missing proportions per year
+# Compute missing proportions per year 
 missing_prop_year <- lapply(alldata, calculate_year_missing)
-missing_prop_country <- lapply(alldata, calculate_country_missing)
 
 keys <- c("wp", "ws", "fw", "fwa", "fwd", "fwi", "gdp", "pop", "prec", "pri", "natd") # shorthand name for all datasets
 years <- sub("^X", "", names(missing_prop_year[[1]]))  # all years
@@ -86,6 +86,8 @@ ggplot(missing_per_year_long, aes(x = Year, y = MissingPercent, color = Dataset,
 
 # Compute missing percentages per country for all datasets
 # Create the data frame dynamically
+missing_prop_country <- lapply(alldata, calculate_country_missing)
+
 missing_per_country <- data.frame(
   Country = water_productivity[ ,2],  # Country.Code of all countries
   sapply(missing_prop_country[keys], function(x) x * 100)
@@ -144,18 +146,31 @@ filter_dataset <- function(data, valid_countries, valid_years) {
 filtered_normal <- purrr::map(normal_dataset, filter_dataset, valid_countries = valid_countries, valid_years = valid_years)
 
 # We use an alternative approach for the two problematic datasets.
-# First, we filter the private investment data. 
-# Define a higher missing threshold for the dataset
-year_threshold_pri <- 0.95
-country_threshold_pri <- 0.95
+# First, we label the private investment data. 
+# For each country, test whether any year column is non-missing
+# (i.e. has at least one observed value)
+pri_df <- private_investment %>%
+  mutate(
+    has_data = if_else(
+      rowSums(!is.na(select(., starts_with("X")))) > 0,
+      1L,  # at least one non NA → label 1
+      0L   # all NA → label 0
+    )
+  )
 
-# Identify valid years and countries for the dataset
-valid_years_pri <- names(which(
-  missing_prop_year$pri <= year_threshold_pri
-))
+# Keep only the metadata + the new label, drop all X* year columns
+pri_labelled <- pri_df %>%
+  dplyr::select(Country.Name, Country.Code, Indicator.Name, Indicator.Code, has_data)
 
-valid_countries_pri <- water_productivity$Country.Code[
-  missing_prop_country$pri <= country_threshold_pri]
+# Inspect results
+table(pri_labelled$has_data)
+
+# Filter pri_labelled to keep only countries in valid countries
+pri_labelled_final <- pri_labelled %>%
+  dplyr::filter(Country.Code %in% valid_countries)
+
+# Verify the result
+table(pri_labelled_final$has_data)
 
 # Second, we filter the natural disaster data. 
 # Natural disaster data has a pecularity. The average data of 1990-2009 is listed on the year 2009. 
@@ -165,16 +180,41 @@ natural_disasters_filtered <- as.data.frame(natural_disasters[, c("Country.Name"
 # Rename the "2009" column to "2000" (midpoint year of 1990-2009)
 colnames(natural_disasters_filtered)[5] <- "X2000"
 
-filtered_problematic <- list(
-  pri = filter_dataset(private_investment, valid_countries = valid_countries_pri, valid_years = valid_years_pri),
-  natd = natural_disasters_filtered
+natural_disasters_filtered_final <- natural_disasters_filtered %>%
+  dplyr::filter(Country.Code %in% valid_countries)
+
+# Imputation
+natural_disasters_complete <- natural_disasters_filtered_final
+
+nd <- natural_disasters_filtered_final %>%
+  left_join(additional_info[ , c("Country.Code", "Region")], by = "Country.Code") %>%
+  mutate(Region = as.factor(Region))
+
+nd_model <- lm(X2000 ~ Region, data = nd, na.action = na.exclude)
+
+nd$X2000_imputed <- ifelse(
+  is.na(nd$X2000),
+  predict(nd_model, newdata = nd),
+  nd$X2000
 )
+
+natural_disasters_complete$X2000 <- nd$X2000_imputed
+
+# Compute missingness of natural disasters
+sum(is.na(natural_disasters_filtered$X2000)) / nrow(natural_disasters_filtered) * 100
+sum(is.na(natural_disasters_filtered_final$X2000)) / nrow(natural_disasters_filtered_final) * 100
+sum(is.na(natural_disasters_complete$X2000)) / nrow(natural_disasters_complete) * 100
+
+filtered_problematic <- list(
+  pri = pri_labelled_final,
+  natd = natural_disasters_complete
+)
+
 # Function to compute overall missing proportion after filtering
 calculate_missing_filtered <- function(data, meta_cols = 4) {
   100 * sum(is.na(data)) / (nrow(data) * (ncol(data) - meta_cols))
 }
 
-# Visualization for the overall missing data proportion
 filtered_all <- c(filtered_normal, filtered_problematic)
 
 missing_data <- data.frame(
@@ -182,25 +222,96 @@ missing_data <- data.frame(
   Missing_Proportion = sapply(filtered_all, function(df) round(calculate_missing_filtered(df), 2))
 )
 
-# Create a horizontal bar plot
-ggplot(missing_data, aes(x = Missing_Proportion, y = reorder(Dataset, Missing_Proportion))) +
-  geom_bar(stat = "identity", fill = "skyblue") +
-  geom_text(aes(label = paste0(round(Missing_Proportion, 2), "%")), hjust = -0.2) +
-  labs(title = "Final Missing Data Proportion After Filtering",
-       x = "Missing Data Proportion (%)",
-       y = "datasets") +
-  xlim(0, 50) +  # Adjust x-axis range to highlight differences
+print(missing_data)
+
+# Fetch world map
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Filter to only valid countries
+selected_countries <- world %>%
+  filter(iso_a3 %in% valid_countries)
+
+# Plot
+ggplot(data = world) +
+  geom_sf(fill = "gray90", color = "white") +
+  geom_sf(data = selected_countries, fill = "steelblue", color = "black") +
+  labs(
+    title    = "Countries Retained After Missing-Data Filtering",
+    subtitle = paste(length(valid_countries), "countries selected"),
+    caption  = "Source: World Bank panel filtering"
+  ) +
   theme_minimal()
 
-# Compute percentage of remaining data after filtering
-total_observations <- nrow(water_productivity) * (ncol(water_productivity) - 5) 
-remaining_observations <- nrow(filtered_normal$wp) * (ncol(filtered_normal$wp) - 4)
-percent_remaining <- (remaining_observations / total_observations) * 100
+# Count the percentage of retained data after missing data handling. 
+# Helper to count total cells beyond the first 4 metadata columns and the last invalid column
+count_cells_1 <- function(df) {
+  nrow(df) * (ncol(df) - 5)
+}
 
-# Print results
-print(paste("Total possible observations:", total_observations))
-print(paste("Remaining observations after filtering:", remaining_observations))
-print(paste("Percentage of remaining data after filtering:", round(percent_remaining, 2), "%"))
+count_cells_2 <- function(df) {
+  nrow(df) * (ncol(df) - 4)
+}
+
+# Cells before filtering 
+cells_before <- sapply(alldata[order(names(alldata))], count_cells_1)
+
+# Cells after filtering 
+cells_after  <- sapply(filtered_all[order(names(filtered_all))], count_cells_2)
+
+# Build a summary table
+size_summary <- data.frame(
+  Dataset        = names(cells_before),
+  Cells_Before   = cells_before,
+  Cells_After    = cells_after,
+  Retained_Pct   = round(cells_after / cells_before * 100, 2)
+)
+
+print(size_summary)
+
+# Helper to count non-NA cells beyond the first 4 columns
+count_non_na <- function(df) {
+  sum(!is.na(df[, 5:ncol(df)]))
+}
+
+# Non-NA counts before filtering (all “normal” + problematic inputs)
+before_counts <- sapply(alldata[order(names(alldata))], count_non_na)
+
+# Non-NA counts after filtering
+after_counts <- sapply(filtered_all[order(names(filtered_all))], count_non_na)
+
+# Combine into a summary
+non_na_summary <- data.frame(
+  Dataset       = names(before_counts),
+  NonNA_Before  = before_counts,
+  NonNA_After   = after_counts,
+  Retained_Pct  = round(after_counts / before_counts * 100, 2)
+)
+
+print(non_na_summary)
+
+# Time series plot of precipitation 
+# Pivot precipitation to long format
+prec_long <- filtered_normal$prec %>%
+  select(Country.Name, Country.Code, all_of(valid_years)) %>%
+  pivot_longer(
+    cols      = starts_with("X"),
+    names_to  = "Year",
+    values_to = "Precipitation"
+  ) %>%
+  mutate(Year = as.integer(sub("X", "", Year)))
+
+# Plot with one color per country
+ggplot(prec_long, aes(x = Year, y = Precipitation, group = Country.Code, color = Country.Code)) +
+  geom_line(alpha = 0.7) +
+  guides(color = "none") +  # hide the legend if too large
+  labs(
+    title   = "Annual Precipitation for Filtered Countries",
+    subtitle = "Each country in its own color",
+    x       = "Year",
+    y       = "Precipitation (mm)",
+    caption = "Data: World Bank, filtered panel"
+  ) +
+  theme_minimal()
 
 # Now the missing values of GDP per capita from 1993 will be filled using imputation by income group 
 # because the global sea level data is available from 1993. 
