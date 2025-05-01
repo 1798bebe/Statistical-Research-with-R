@@ -6,7 +6,7 @@ This study analyzes global and country‑level water‑use patterns by combining
 
 ## Summary of Work
 
-- Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for natural disasters.
+- Data collection and preprocessing completed, including filtering, label creation, new feature derivation, and regression-based imputation.
   - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/report_data_preprocessing.pdf)
   - [🧠 R Script](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) 
 
