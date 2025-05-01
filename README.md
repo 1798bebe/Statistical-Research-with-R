@@ -7,7 +7,7 @@ This study analyzes global and country‑level water‑use patterns by combining
 ## Summary of Work
 
 - Data collection and preprocessing completed, including feature engineering, filtering missing data and regression-based imputation for natural disasters.
-  - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/Supervised%20Learning%20%28Regression%2C%20Classification%29/report_supervised_learning_part2.pdf)
+  - [📄 Report (PDF)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/report_data_preprocessing.pdf)
   - [🧠 R Script](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/preprocessing/preprocessing.R) 
 
 - Supervised learning applied to classify country population‑growth via nested CV (Random Forest, XGBoost, GLMNET, random‑baseline) with F1‑optimized random‑search tuning, pairwise Wilcoxon tests, GLMNET interpretability (odds ratios, variable importance, PDPs) and choropleth misclassification mapping.
