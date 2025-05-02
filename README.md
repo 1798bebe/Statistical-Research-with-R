@@ -6,7 +6,7 @@ This study analyzes global and country‑level water‑use patterns by combining
 
 The final report is available here: [📘 Final Report (PDF, 70 pages)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/documents/final_report.pdf)
 
-(Note: This research began on March 13th and is complete as of May 1, 2025, but may undergo minor updates.)
+(Note: This research began on March 13th and is complete as of May 1, 2025, but may undergo subtle updates if corrections are identified.)
 
 ## Summary of Work
 
