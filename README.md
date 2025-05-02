@@ -36,5 +36,5 @@ The final report is available here: [📘 Final Report (PDF, 70 pages)](https://
 | Name                         | Email                    |
 |------------------------------|--------------------------|
 | Seunghyun Kim (Group Leader) | s4sekimm@uni-trier.de    |
-| Niran Raj Pradhan            |                          |
+| Niran Raj Pradhan            | s4niprad@uni-trier.de    |
 | Heejung Heo                  | s4heheoo@uni-trier.de    |
