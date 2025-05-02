@@ -38,3 +38,7 @@ The final report is available here: [📘 Final Report (PDF, 70 pages)](https://
 | Seunghyun Kim (Group Leader) | s4sekimm@uni-trier.de    |
 | Niran Raj Pradhan            | s4niprad@uni-trier.de    |
 | Heejung Heo                  | s4heheoo@uni-trier.de    |
+
+## Notes
+
+This research began on March 13th and is complete as of May 1, 2025, but may undergo minor updates.
