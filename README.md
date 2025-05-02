@@ -6,6 +6,8 @@ This study analyzes global and country‑level water‑use patterns by combining
 
 The final report is available here: [📘 Final Report (PDF, 70 pages)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/documents/final_report.pdf)
 
+(Note: This research began on March 13th and is complete as of May 1, 2025, but may undergo minor updates.)
+
 ## Summary of Work
 
 - Data collection and preprocessing completed, including filtering, label creation, new feature derivation, and regression-based imputation.
@@ -38,7 +40,3 @@ The final report is available here: [📘 Final Report (PDF, 70 pages)](https://
 | Seunghyun Kim (Group Leader) | s4sekimm@uni-trier.de    |
 | Niran Raj Pradhan            | s4niprad@uni-trier.de    |
 | Heejung Heo                  | s4heheoo@uni-trier.de    |
-
-## Notes
-
-This research began on March 13th and is complete as of May 1, 2025, but may undergo minor updates.
