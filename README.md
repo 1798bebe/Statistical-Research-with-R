@@ -4,7 +4,7 @@ Water is a fundamental resource essential for human survival, economic developme
 
 This study analyzes global and country‑level water‑use patterns by combining classical statistical techniques with machine learning workflows in R. Water-related variables were examined through a structured pipeline comprising exploratory data analysis, supervised learning(binary classification), unsupervised learning(PCA & clustering), and time‑series forecasting. A major emphasis was placed on rigorous validation and evaluation, such as constructing a reliable analytical workflow, optimizing model performance, critically reviewing assumptions and limitations, and examining generalizability of the models—to ensure that all findings are both reliable and applicable.
 
-The final report is available here: [📘 Final Report (PDF, 70 pages)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/documents/final_report.pdf)
+The *final report* is available here: [📘 Final Report (PDF, 70 pages)](https://github.com/1798bebe/Statistical-Research-with-R/blob/main/documents/final_report.pdf)
 
 (Note: This research began on March 13th and is complete as of May 1, 2025, but may undergo updates if any issues are identified.)
 
